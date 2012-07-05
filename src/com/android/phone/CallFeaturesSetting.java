@@ -189,6 +189,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final String BUTTON_VIDEO_CALL_FB_KEY = "videocall_setting_fb_key";
     private static final String BUTTON_VIDEO_CALL_FW_KEY = "videocall_setting_fw_key";
     private static final String BUTTON_VIDEO_CALL_SP_KEY = "vt_imageplacer";
+    private static final String BUTTON_NOISE_SUPPRESSION_KEY = "button_noise_suppression_key";
 
     private static final String PROX_AUTO_SPEAKER  = "prox_auto_speaker";
     private static final String PROX_AUTO_SPEAKER_DELAY  = "prox_auto_speaker_delay";
@@ -284,6 +285,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     private SwitchPreference mButtonHAC;
     private ListPreference mButtonDTMF;
     private ListPreference mButtonTTY;
+    private CheckBoxPreference mButtonNoiseSuppression;
     private Preference mPhoneAccountSettingsPreference;
     private SwitchPreference mMwiNotification;
     private ListPreference mVoicemailProviders;
@@ -527,6 +529,11 @@ public class CallFeaturesSetting extends PreferenceActivity
                 showDialogIfForeground(TTY_SET_RESPONSE_ERROR);
             }
             return true;
+        } else if (preference == mButtonNoiseSuppression) {
+            int nsp = mButtonNoiseSuppression.isChecked() ? 1 : 0;
+            // Update Noise suppression value in Settings database
+            Settings.System.putInt(mPhone.getContext().getContentResolver(),
+                    Settings.System.NOISE_SUPPRESSION, nsp);
         } else if (preference == mButtonAutoRetry) {
             android.provider.Settings.Global.putInt(mPhone.getContext().getContentResolver(),
                     android.provider.Settings.Global.CALL_AUTO_RETRY,
@@ -1697,6 +1704,7 @@ public class CallFeaturesSetting extends PreferenceActivity
         mButtonTTY = (ListPreference) findPreference(BUTTON_TTY_KEY);
         mVoicemailProviders = (ListPreference) findPreference(BUTTON_VOICEMAIL_PROVIDER_KEY);
         mIPPrefixPreference = (PreferenceScreen) findPreference(BUTTON_IPPREFIX_KEY);
+        mButtonNoiseSuppression = (CheckBoxPreference) findPreference(BUTTON_NOISE_SUPPRESSION_KEY);
 
         mProxSpeaker = (SwitchPreference) findPreference(PROX_AUTO_SPEAKER);
         mProxSpeakerIncallOnly = (SwitchPreference) findPreference(PROX_AUTO_SPEAKER_INCALL_ONLY);
@@ -1812,6 +1820,15 @@ public class CallFeaturesSetting extends PreferenceActivity
             mCallRecordingFormat.setValue(String.valueOf(format));
             mCallRecordingFormat.setSummary(mCallRecordingFormat.getEntry());
             mCallRecordingFormat.setOnPreferenceChangeListener(this);
+        }
+
+        if (mButtonNoiseSuppression != null) {
+            if (getResources().getBoolean(R.bool.has_in_call_noise_suppression)) {
+                mButtonNoiseSuppression.setOnPreferenceChangeListener(this);
+            } else {
+                prefSet.removePreference(mButtonNoiseSuppression);
+                mButtonNoiseSuppression = null;
+            }
         }
 
         if (!getResources().getBoolean(R.bool.world_phone) && (!isMsim)) {
